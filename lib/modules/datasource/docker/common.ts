@@ -1,6 +1,7 @@
 import is from '@sindresorhus/is';
 import { parse } from 'auth-header';
 import {
+  ECR_MAX_RESULTS_ERROR,
   HOST_DISABLED,
   PAGE_NOT_FOUND_ERROR,
 } from '../../../constants/error-messages';
@@ -27,7 +28,7 @@ import {
 } from '../../../util/url';
 import { api as dockerVersioning } from '../../versioning/docker';
 import { getGoogleAuthToken } from '../util';
-import { ecrRegex, getECRAuthToken } from './ecr';
+import { ecrRegex, getECRAuthToken, isECRMaxResultsResponse } from './ecr';
 import { googleRegex } from './google';
 import type { OciHelmConfig } from './schema';
 import type { RegistryRepository } from './types';
@@ -73,6 +74,10 @@ export async function getAuthHeaders(
       logger.debug(`Page Not Found ${apiCheckUrl}`);
       // throw error up to be caught and potentially retried with library/ prefix
       throw new Error(PAGE_NOT_FOUND_ERROR);
+    }
+    if (isECRMaxResultsResponse(apiCheckResponse)) {
+      // throw error up to be caught and potentially retried
+      throw new Error(ECR_MAX_RESULTS_ERROR);
     }
     if (
       apiCheckResponse.statusCode !== 401 ||
@@ -241,6 +246,9 @@ export async function getAuthHeaders(
       throw new ExternalHostError(err);
     }
     if (err.message === PAGE_NOT_FOUND_ERROR) {
+      throw err;
+    }
+    if (err.message === ECR_MAX_RESULTS_ERROR) {
       throw err;
     }
     if (err.message === HOST_DISABLED) {

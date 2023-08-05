@@ -1,10 +1,16 @@
 import is from '@sindresorhus/is';
-import { PAGE_NOT_FOUND_ERROR } from '../../../constants/error-messages';
+import {
+  ECR_MAX_RESULTS_ERROR,
+  PAGE_NOT_FOUND_ERROR,
+} from '../../../constants/error-messages';
 import { logger } from '../../../logger';
 import { ExternalHostError } from '../../../types/errors/external-host-error';
 import { cache } from '../../../util/cache/package/decorator';
 import { HttpError } from '../../../util/http';
-import type { HttpResponse } from '../../../util/http/types';
+import type {
+  HttpResponse,
+  OutgoingHttpHeaders,
+} from '../../../util/http/types';
 import { hasKey } from '../../../util/object';
 import { regEx } from '../../../util/regex';
 import { type AsyncResult, Result } from '../../../util/result';
@@ -630,12 +636,28 @@ export class DockerDatasource extends Datasource {
     let url: string | null =
       `${registryHost}/${dockerRepository}/tags/list?n=${limit}`;
     url = ensurePathPrefix(url, '/v2');
-    const headers = await getAuthHeaders(
-      this.http,
-      registryHost,
-      dockerRepository,
-      url,
-    );
+    let headers: OutgoingHttpHeaders | null = null;
+    try {
+      headers = await getAuthHeaders(
+        this.http,
+        registryHost,
+        dockerRepository,
+        url,
+      );
+    } catch (err) {
+      if (err.message !== ECR_MAX_RESULTS_ERROR) {
+        throw err;
+      }
+      url = `${registryHost}/${dockerRepository}/tags/list?n=1000`;
+      url = ensurePathPrefix(url, '/v2');
+      headers = await getAuthHeaders(
+        this.http,
+        registryHost,
+        dockerRepository,
+        url,
+      );
+    }
+
     if (!headers) {
       logger.debug('Failed to get authHeaders for getTags lookup');
       return null;

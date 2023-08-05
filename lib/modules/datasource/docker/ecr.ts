@@ -43,6 +43,12 @@ export async function getECRAuthToken(
 
 export function isECRMaxResultsError(err: HttpError): boolean {
   const resp = err.response as HttpResponse<any> | undefined;
+  return isECRMaxResultsResponse(resp);
+}
+
+export function isECRMaxResultsResponse(
+  resp: HttpResponse<any> | undefined,
+): boolean {
   return !!(
     resp?.statusCode === 405 &&
     resp.headers?.['docker-distribution-api-version'] &&

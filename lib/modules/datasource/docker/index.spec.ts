@@ -1519,8 +1519,6 @@ describe('modules/datasource/docker/index', () => {
         httpMock
           .scope('https://ecr-proxy.company.com/v2')
           .get('/node/tags/list?n=10000')
-          .reply(200, '', {})
-          .get('/node/tags/list?n=10000')
           .reply(
             405,
             {
@@ -1536,6 +1534,8 @@ describe('modules/datasource/docker/index', () => {
               'Docker-Distribution-Api-Version': 'registry/2.0',
             },
           )
+          .get('/node/tags/list?n=1000')
+          .reply(200, { tags: ['some'] }, {})
           .get('/')
           .reply(200)
           .get('/node/tags/list?n=1000')

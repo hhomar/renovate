@@ -66,3 +66,6 @@ export const PAGE_NOT_FOUND_ERROR = 'page-not-found';
 
 // Missing API required credentials
 export const MISSING_API_CREDENTIALS = 'missing-api-credentials';
+
+// ECR Max Results Error
+export const ECR_MAX_RESULTS_ERROR = 'ecr-max-results-error';
